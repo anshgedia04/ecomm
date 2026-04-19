@@ -1,17 +1,21 @@
 import ProductCard from "@/components/client/ProductCard"
-import { ApiRequest } from "@/app/_api/api"
-import { ENDPOINTS } from "@/constants/ENDPOINTS"
+import { collection, getDocs } from "firebase/firestore"
+import { db } from "@/lib/firebase/client"
 import type { Product } from "@/types"
 
+export const dynamic = "force-dynamic"
+
 async function getProducts() {
-  const baseURL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
   try {
-    const data = await ApiRequest<{ products?: Product[] }>(
-      `${baseURL}${ENDPOINTS.PRODUCTS.BASE}`,
-      "GET"
-    )
-    return data.products ?? []
-  } catch {
+    const productsRef = collection(db, "products")
+    const snapshot = await getDocs(productsRef)
+    
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Product[]
+  } catch (error) {
+    console.error("Error fetching products on Home:", error)
     return []
   }
 }
